@@ -5,5 +5,8 @@
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "forwardPorts": [
         5150
-    ]
+    ],
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {}
+    }
 }
