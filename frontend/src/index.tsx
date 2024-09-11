@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { LocoSplash } from "./LocoSplash";
+import { HaikunatorGenerator } from "./pages/HaikunatorGenerator";
 
 import "./index.css";
 
@@ -12,6 +12,6 @@ if (!root) {
 
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
-    <LocoSplash />
+    <HaikunatorGenerator />
   </React.StrictMode>,
 );
