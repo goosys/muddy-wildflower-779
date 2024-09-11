@@ -38,6 +38,9 @@ fluent-templates = { version = "0.8.0", features = ["tera"] }
 unic-langid = "0.9.4"
 # /view engine
 
+# my application
+haikunator = "0.1.2" # random name generator
+
 [[bin]]
 name = "myapp-cli"
 path = "src/bin/main.rs"

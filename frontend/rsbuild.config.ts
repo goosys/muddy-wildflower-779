@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [pluginReact()],
   html: {
     favicon: "src/assets/favicon.ico",
-    title: "Loco SaaS Starter",
+    title: "Haikunator Generator | Heroku-like memorable random string",
   },
   dev: {
     writeToDisk: true,
