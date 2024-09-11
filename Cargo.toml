@@ -10,6 +10,9 @@ default-run = "myapp-cli"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+shuttle-axum = "0.46.0"
+shuttle-runtime = { version = "0.46.0", default-features = false }
+shuttle-shared-db = { version = "0.46.0", features = ["postgres"] }
 
 loco-rs = { version = "0.8.1" }
 migration = { path = "migration" }
@@ -50,6 +53,10 @@ required-features = []
 name = "tool"
 path = "src/bin/tool.rs"
 required-features = []
+
+[[bin]]
+name = "myapp"
+path = "src/bin/shuttle.rs"
 
 [dev-dependencies]
 serial_test = "3.1.1"
