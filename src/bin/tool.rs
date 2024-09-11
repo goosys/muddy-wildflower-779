@@ -1,6 +1,6 @@
 use loco_rs::cli;
-use myapp::app::App;
 use migration::Migrator;
+use myapp::app::App;
 
 #[tokio::main]
 async fn main() -> loco_rs::Result<()> {
