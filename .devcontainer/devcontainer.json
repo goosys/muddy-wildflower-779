@@ -4,7 +4,7 @@
     "service": "app",
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "forwardPorts": [
-        5150
+        5150, 5153
     ],
     "features": {
         "ghcr.io/devcontainers/features/node:1": {}

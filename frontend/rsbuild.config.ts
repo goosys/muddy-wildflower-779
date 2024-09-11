@@ -8,7 +8,11 @@ export default defineConfig({
     favicon: "src/assets/favicon.ico",
     title: "Loco SaaS Starter",
   },
+  dev: {
+    writeToDisk: true,
+  },
   server: {
+    port: 5153,
     proxy: {
       "/api": {
         target: "http://127.0.0.1:5150",
