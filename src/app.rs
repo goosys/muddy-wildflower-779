@@ -10,9 +10,7 @@ use loco_rs::{
     Result,
 };
 
-use crate::{
-    controllers, initializers,
-};
+use crate::{controllers, initializers};
 
 pub struct App;
 #[async_trait]
@@ -42,8 +40,7 @@ impl Hooks for App {
     }
 
     fn routes(_ctx: &AppContext) -> AppRoutes {
-        AppRoutes::with_default_routes()
-            .add_route(controllers::haikunator::routes())
+        AppRoutes::with_default_routes().add_route(controllers::haikunator::routes())
     }
 
     fn connect_workers<'a>(_p: &'a mut Processor, _ctx: &'a AppContext) {}
