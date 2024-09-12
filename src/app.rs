@@ -1,24 +1,17 @@
-use std::path::Path;
-
 use async_trait::async_trait;
+
 use loco_rs::{
     app::{AppContext, Hooks, Initializer},
     boot::{create_app, BootResult, StartMode},
     controller::AppRoutes,
-    db::{self, truncate_table},
     environment::Environment,
     task::Tasks,
-    worker::{AppWorker, Processor},
+    worker::Processor,
     Result,
 };
-use migration::Migrator;
-use sea_orm::DatabaseConnection;
 
 use crate::{
     controllers, initializers,
-    models::_entities::{notes, users},
-    tasks,
-    workers::downloader::DownloadWorker,
 };
 
 pub struct App;
@@ -39,7 +32,7 @@ impl Hooks for App {
     }
 
     async fn boot(mode: StartMode, environment: &Environment) -> Result<BootResult> {
-        create_app::<Self, Migrator>(mode, environment).await
+        create_app::<Self>(mode, environment).await
     }
 
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
@@ -50,29 +43,10 @@ impl Hooks for App {
 
     fn routes(_ctx: &AppContext) -> AppRoutes {
         AppRoutes::with_default_routes()
-            .add_route(controllers::notes::routes())
-            .add_route(controllers::auth::routes())
-            .add_route(controllers::user::routes())
             .add_route(controllers::haikunator::routes())
     }
 
-    fn connect_workers<'a>(p: &'a mut Processor, ctx: &'a AppContext) {
-        p.register(DownloadWorker::build(ctx));
-    }
+    fn connect_workers<'a>(_p: &'a mut Processor, _ctx: &'a AppContext) {}
 
-    fn register_tasks(tasks: &mut Tasks) {
-        tasks.register(tasks::seed::SeedData);
-    }
-
-    async fn truncate(db: &DatabaseConnection) -> Result<()> {
-        truncate_table(db, users::Entity).await?;
-        truncate_table(db, notes::Entity).await?;
-        Ok(())
-    }
-
-    async fn seed(db: &DatabaseConnection, base: &Path) -> Result<()> {
-        db::seed::<users::ActiveModel>(db, &base.join("users.yaml").display().to_string()).await?;
-        db::seed::<notes::ActiveModel>(db, &base.join("notes.yaml").display().to_string()).await?;
-        Ok(())
-    }
+    fn register_tasks(_tasks: &mut Tasks) {}
 }

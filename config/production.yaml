@@ -43,7 +43,7 @@ server:
     secure_headers:
       preset: github
       overrides:
-        Content-Security-Policy: "default-src 'self' http: https:; font-src 'self' http: https: data:; img-src 'self' http: https: data:; object-src 'none'; script-src http: https:; style-src 'self' http: https: 'unsafe-inline'; connect-src 'self' ws://localhost:5153 http: https:"
+        Content-Security-Policy: "default-src 'self' https:; font-src 'self' https: data:; img-src 'self' https: data:; object-src 'none'; script-src https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' ws: https:"
     # calculate remote IP based on `X-Forwarded-For` when behind a proxy or load balancer
     # use RemoteIP(..) extractor to get the remote IP.
     # without this middleware, you'll get the proxy IP instead.
