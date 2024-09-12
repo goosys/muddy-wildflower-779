@@ -55,6 +55,14 @@ $ cargo loco start
 
 Then open http://localhost:5150/ in your browser.
 
+## Linting
+
+To format and auto-fix your code, you can use the following command:
+
+```console
+$ cargo fmt --all
+```
+
 # Deployment
 
 Deploy to [Shuttle](https://console.shuttle.rs/):
