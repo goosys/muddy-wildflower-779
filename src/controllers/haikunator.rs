@@ -9,8 +9,14 @@ async fn generate() -> Result<Response> {
     format::json(GeneratorResponse::generate(&generated))
 }
 
+async fn generate_txt() -> Result<Response> {
+    let generated = haikunator::Haikunator::default().haikunate();
+    format::text(&generated)
+}
+
 pub fn routes() -> Routes {
     Routes::new()
-        .prefix("api/haikunator")
-        .add("/generate", get(generate))
+        .prefix("api")
+        .add("/gen", get(generate))
+        .add("/gen.txt", get(generate_txt))
 }

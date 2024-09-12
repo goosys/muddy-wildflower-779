@@ -7,7 +7,7 @@ export const HaikunatorGenerator = () => {
 
   const generateString = async () => {
     try {
-      const response = await fetch('/api/haikunator/generate')
+      const response = await fetch('/api/gen')
       if (response.ok) {
         const data: { name: string } = await response.json()
         setGeneratedString(data.name)

@@ -13,8 +13,13 @@ Web:
 API:
 
 ```console
-$ curl https://haikunator-generator.shuttleapp.rs/api/haikunator/generate
+// JSON
+$ curl https://haikunator-generator.shuttleapp.rs/api/gen
 {"name":"falling-disk-1736"}
+
+// Plain text
+$ curl https://haikunator-generator.shuttleapp.rs/api/gen.txt
+broken-wildflower-1928
 ```
 
 # Development
