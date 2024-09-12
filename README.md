@@ -1,59 +1,80 @@
-# Welcome to Loco :train:
+# Haikunator Generator via Loco(Rust)
 
-Loco is a web and API framework running on Rust.
+This is a web service that generates Heroku-like memorable random strings.
 
-This is the **SaaS starter** which includes a `User` model and authentication based on JWT.
-It also include configuration sections that help you pick either a frontend or a server-side template set up for your fullstack server.
+![Screenshot](docs/screenshot_top.png)
 
+# Usage
 
-## Quick Start
+Web:
 
-You need:
+[https://haikunator-generator.shuttleapp.rs/](https://haikunator-generator.shuttleapp.rs/)
 
-* A local postgres instance
-* A local Redis instance
+API:
 
-Check out your development [configuration](config/development.yaml).
-
-> To configure a database , please run a local postgres database with <code>loco:loco</code> and a db named <code>[app name]_development.</code>: 
-<code>docker run -d -p 5432:5432 -e POSTGRES_USER=loco -e POSTGRES_DB=[app name]_development -e POSTGRES_PASSWORD="loco" postgres:15.3-alpine</code>
-
-Now start your app:
-
+```console
+$ curl https://haikunator-generator.shuttleapp.rs/api/haikunator/generate
+{"name":"falling-disk-1736"}
 ```
+
+# Development
+
+## In DevContainer
+
+```console
+$ rustc --version
+rustc 1.80.1 (3f5fd8dd4 2024-08-06)
+$ cargo --version
+cargo 1.80.1 (376290515 2024-07-16)
+$ loco --version
+loco-cli 0.2.8
+$ cargo shuttle --version
+cargo-shuttle 0.47.0
+$ npm --version
+10.8.2
+$ pnpm --version
+9.10.0
+```
+
+### Start frontend
+
+Run the following commands:
+
+```console
+$ cd frontend
+$ pnpm dev
+```
+
+### Start backend
+
+On another terminal window, run:
+
+```console
 $ cargo loco start
-Finished dev [unoptimized + debuginfo] target(s) in 21.63s
-    Running `target/debug/myapp start`
-
-    :
-    :
-    :
-
-controller/app_routes.rs:203: [Middleware] Adding log trace id
-
-                      ▄     ▀
-                                 ▀  ▄
-                  ▄       ▀     ▄  ▄ ▄▀
-                                    ▄ ▀▄▄
-                        ▄     ▀    ▀  ▀▄▀█▄
-                                          ▀█▄
-▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▀▀█
- ██████  █████   ███ █████   ███ █████   ███ ▀█
- ██████  █████   ███ █████   ▀▀▀ █████   ███ ▄█▄
- ██████  █████   ███ █████       █████   ███ ████▄
- ██████  █████   ███ █████   ▄▄▄ █████   ███ █████
- ██████  █████   ███  ████   ███ █████   ███ ████▀
-   ▀▀▀██▄ ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀ ██▀
-       ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-
-started on port 5150
 ```
 
-## Full Stack Serving
+Then open http://localhost:5150/ in your browser.
 
-You can check your [configuration](config/development.yaml) to pick either frontend setup or server-side rendered template, and activate the relevant configuration sections.
+# Deployment
 
+Deploy to [Shuttle](https://console.shuttle.rs/):
 
-## Getting help
+```console
+$ pushd frontend
+$ echo !dist/ >> .gitignore
+$ pnpm build
+$ popd
+$ cargo shuttle login
+$ cargo shuttle deploy
+$ git checkout frontend/.gitignore
+```
 
-Check out [a quick tour](https://loco.rs/docs/getting-started/tour/) or [the complete guide](https://loco.rs/docs/getting-started/guide/).
+# Dependencies
+
+| | |
+| -- | -- |
+| Rust | [https://www.rust-lang.org/](https://www.rust-lang.org/) |
+| Loco | [https://loco.rs/](https://loco.rs/) |
+| Shuttle | [https://console.shuttle.rs/](https://console.shuttle.rs/) |
+| rust-haikunator | [https://github.com/nishanths/rust-haikunator](https://github.com/nishanths/rust-haikunator) |
+
