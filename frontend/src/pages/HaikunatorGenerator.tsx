@@ -21,6 +21,10 @@ export const HaikunatorGenerator = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+      <header className="mt-auto mb-4 text-right text-gray-500 fixed top-2 right-4">
+        <p><a href="https://github.com/goosys/muddy-wildflower-779">Contact</a></p>
+      </header>
+
       <main className="w-full max-w-lg bg-white rounded-lg shadow-md p-8 flex flex-col items-center space-y-6">
         <h1 className="text-2xl font-bold text-gray-800 text-center">Haikunator Generator</h1>
         <p className="text-gray-600 text-center mt-2">Heroku-like memorable random string</p>
@@ -48,7 +52,7 @@ export const HaikunatorGenerator = () => {
       </main>
 
       <footer className="mt-auto mb-4 text-center text-gray-500 fixed bottom-0 left-0 right-0">
-        <p>Powered by Haikunator</p>
+        <p><a href="https://github.com/nishanths/rust-haikunator">Powered by Haikunator</a></p>
       </footer>
     </div>
   )
