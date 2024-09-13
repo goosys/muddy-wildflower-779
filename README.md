@@ -88,6 +88,6 @@ $ git checkout frontend/.gitignore
 | -- | -- |
 | Rust | [https://www.rust-lang.org/](https://www.rust-lang.org/) |
 | Loco | [https://loco.rs/](https://loco.rs/) |
-| Shuttle | [https://console.shuttle.rs/](https://console.shuttle.rs/) |
+| Shuttle | [https://www.shuttle.rs/](https://www.shuttle.rs/) |
 | rust-haikunator | [https://github.com/nishanths/rust-haikunator](https://github.com/nishanths/rust-haikunator) |
 
