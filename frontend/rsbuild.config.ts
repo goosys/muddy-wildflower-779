@@ -6,7 +6,18 @@ export default defineConfig({
   plugins: [pluginReact()],
   html: {
     favicon: "src/assets/favicon.ico",
-    title: "Haikunator Generator | Heroku-like memorable random string",
+    title({ entryName }) {
+      const titles = {
+        404: "404 Not Found"
+      };
+      return titles[entryName] || "Haikunator Generator | Heroku-like memorable random string";
+    },
+  },
+  source: {
+    entry: {
+      index: "./src/index.tsx",
+      404: "./src/404.tsx",
+    },
   },
   dev: {
     writeToDisk: true,

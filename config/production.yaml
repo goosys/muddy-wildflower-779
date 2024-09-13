@@ -127,6 +127,6 @@ server:
       folder:
         uri: "/"
         path: "frontend/dist"
-      fallback: "frontend/dist/index.html"
+      fallback: "frontend/dist/404.html"
     # (client-block-end)
     #
