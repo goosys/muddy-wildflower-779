@@ -30,9 +30,13 @@ export const HaikunatorGenerator = () => {
         <p className="text-gray-600 text-center mt-2">Heroku-like memorable random string</p>
 
         <div className="w-full bg-gray-100 p-2 sm:p-4 rounded-md flex items-center">
-          <div className="text-center flex-grow pl-4">
-            <p className="text-xl sm:text-2xl font-bold text-center break-all">{generatedString}</p>
-          </div>
+            <div className="text-center flex-grow pl-4">
+            {generatedString ? (
+              <p className="text-xl sm:text-2xl font-bold text-center break-all">{generatedString}</p>
+            ) : (
+              <p className="text-gray-400 text-xl sm:text-2xl font-bold text-center break-all">muddy-wildflower-779</p>
+            )}
+            </div>
           <button
             onClick={(e) => {
               navigator.clipboard.writeText(generatedString)
