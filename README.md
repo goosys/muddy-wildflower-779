@@ -70,13 +70,13 @@ $ cargo fmt --all
 
 # Deployment
 
-Deploy to [Shuttle](https://console.shuttle.rs/):
+Deploy to [Shuttle](https://console.shuttle.dev/):
 
 ```console
 $ pushd frontend
 $ pnpm build
 $ popd
-$ cargo deploy
+$ cargo shuttle deploy
 ```
 
 # Dependencies
@@ -85,6 +85,6 @@ $ cargo deploy
 | -- | -- |
 | Rust | [https://www.rust-lang.org/](https://www.rust-lang.org/) |
 | Loco | [https://loco.rs/](https://loco.rs/) |
-| Shuttle | [https://www.shuttle.rs/](https://www.shuttle.rs/) |
+| Shuttle | [https://www.shuttle.dev/](https://www.shuttle.dev/) |
 | rust-haikunator | [https://github.com/nishanths/rust-haikunator](https://github.com/nishanths/rust-haikunator) |
 
