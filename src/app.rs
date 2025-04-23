@@ -1,15 +1,16 @@
 use async_trait::async_trait;
-
 use loco_rs::{
     app::{AppContext, Hooks, Initializer},
+    bgworker::Queue,
     boot::{create_app, BootResult, StartMode},
+    config::Config,
     controller::AppRoutes,
     environment::Environment,
     task::Tasks,
-    worker::Processor,
     Result,
 };
 
+#[allow(unused_imports)]
 use crate::{controllers, initializers};
 
 pub struct App;
@@ -29,8 +30,12 @@ impl Hooks for App {
         )
     }
 
-    async fn boot(mode: StartMode, environment: &Environment) -> Result<BootResult> {
-        create_app::<Self>(mode, environment).await
+    async fn boot(
+        mode: StartMode,
+        environment: &Environment,
+        config: Config,
+    ) -> Result<BootResult> {
+        create_app::<Self>(mode, environment, config).await
     }
 
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
@@ -42,8 +47,12 @@ impl Hooks for App {
     fn routes(_ctx: &AppContext) -> AppRoutes {
         AppRoutes::with_default_routes().add_route(controllers::haikunator::routes())
     }
+    async fn connect_workers(_ctx: &AppContext, _queue: &Queue) -> Result<()> {
+        Ok(())
+    }
 
-    fn connect_workers<'a>(_p: &'a mut Processor, _ctx: &'a AppContext) {}
-
-    fn register_tasks(_tasks: &mut Tasks) {}
+    #[allow(unused_variables)]
+    fn register_tasks(tasks: &mut Tasks) {
+        // tasks-inject (do not remove)
+    }
 }

@@ -8,17 +8,17 @@ This is a web service that generates Heroku-like memorable random strings.
 
 Web:
 
-[https://haikunator-generator.shuttleapp.rs/](https://haikunator-generator.shuttleapp.rs/)
+[https://haikunator-generator.shuttle.app/](https://haikunator-generator.shuttle.app/)
 
 API:
 
 ```console
 // JSON
-$ curl https://haikunator-generator.shuttleapp.rs/api/gen
+$ curl https://haikunator-generator.shuttle.app/api/gen
 {"name":"falling-disk-1736"}
 
 // Plain text
-$ curl https://haikunator-generator.shuttleapp.rs/api/gen.txt
+$ curl https://haikunator-generator.shuttle.app/api/gen.txt
 broken-wildflower-1928
 ```
 
@@ -28,17 +28,17 @@ broken-wildflower-1928
 
 ```console
 $ rustc --version
-rustc 1.80.1 (3f5fd8dd4 2024-08-06)
+rustc 1.86.0 (05f9846f8 2025-03-31)
 $ cargo --version
-cargo 1.80.1 (376290515 2024-07-16)
+cargo 1.86.0 (adf9b6ad1 2025-02-28)
 $ loco --version
-loco-cli 0.2.8
+loco 0.15.0
 $ cargo shuttle --version
-cargo-shuttle 0.47.0
+cargo-shuttle 0.53.0
 $ npm --version
-10.8.2
+10.9.2
 $ pnpm --version
-9.10.0
+10.9.0
 ```
 
 ### Start frontend
@@ -74,12 +74,9 @@ Deploy to [Shuttle](https://console.shuttle.rs/):
 
 ```console
 $ pushd frontend
-$ echo !dist/ >> .gitignore
 $ pnpm build
 $ popd
-$ cargo shuttle login
-$ cargo shuttle deploy
-$ git checkout frontend/.gitignore
+$ cargo deploy
 ```
 
 # Dependencies

@@ -1,1 +1,15 @@
 name = "haikunator-generator"
+
+[deploy]
+include = [
+    "config/production.yaml",
+    "frontend/dist/*",
+    "assets/*"
+]
+
+[build]
+assets = [
+    "config/production.yaml",
+    "frontend/dist/*",
+    "assets/*"
+]

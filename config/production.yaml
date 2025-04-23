@@ -26,7 +26,7 @@ server:
     # Fallback file for not found (404) routes
     # disable this for production or use your own file
     fallback:
-      enable: true
+      enable: false
       # use a file if you want a different 404 page
       # file: path/to/file.html
 
