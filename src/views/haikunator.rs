@@ -7,9 +7,9 @@ pub struct GeneratorResponse {
 
 impl GeneratorResponse {
     #[must_use]
-    pub fn generate(generated: &String) -> Self {
+    pub fn generate(generated: &str) -> Self {
         Self {
-            name: generated.to_string(),
+            name: generated.to_owned(),
         }
     }
 }
