@@ -27,7 +27,7 @@ chrono = "0.4"
 axum = { version = "0.8.1" }
 include_dir = "0.7"
 uuid = { version = "1.6.0", features = ["v4"] }
-tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json"] }
 
 # view engine i18n
 fluent-templates = { version = "0.8.0", features = ["tera"] }
