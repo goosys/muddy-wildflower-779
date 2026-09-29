@@ -9,7 +9,7 @@ use loco_rs::{
 use tracing::info;
 
 const I18N_DIR: &str = "assets/i18n";
-const I18N_SHARED: &str = "assets/i18n/shared.ftl";
+const I18N_SHARED: &str = "assets/i18n/_shared.ftl";
 #[allow(clippy::module_name_repetitions)]
 pub struct ViewEngineInitializer;
 
@@ -20,27 +20,22 @@ impl Initializer for ViewEngineInitializer {
     }
 
     async fn after_routes(&self, router: AxumRouter, _ctx: &AppContext) -> Result<AxumRouter> {
-        #[allow(unused_mut)]
-        let mut tera_engine = engines::TeraView::build()?;
-        if std::path::Path::new(I18N_DIR).exists() {
-            let arc = ArcLoader::builder(&I18N_DIR, unic_langid::langid!("en-US"))
-                .shared_resources(Some(&[I18N_SHARED.into()]))
-                .customize(|bundle| bundle.set_use_isolating(false))
-                .build()
-                .map_err(|e| Error::string(&e.to_string()))?;
-            #[cfg(debug_assertions)]
-            tera_engine
-                .tera
-                .lock()
-                .expect("lock")
-                .register_function("t", FluentLoader::new(arc));
-
-            #[cfg(not(debug_assertions))]
-            tera_engine
-                .tera
-                .register_function("t", FluentLoader::new(arc));
+        let tera_engine = if std::path::Path::new(I18N_DIR).exists() {
+            let tera_engine = engines::TeraView::build_with_post_process(move |tera| {
+                let arc = ArcLoader::builder(&I18N_DIR, unic_langid::langid!("en-US"))
+                    .shared_resources(Some(&[I18N_SHARED.into()]))
+                    .customize(|bundle| bundle.set_use_isolating(false))
+                    .build()
+                    .map_err(|e| Error::string(&e.to_string()))?;
+                tera.register_function("t", FluentLoader::new(arc));
+                Ok(())
+            })?;
             info!("locales loaded");
-        }
+
+            tera_engine
+        } else {
+            engines::TeraView::build()?
+        };
 
         Ok(router.layer(Extension(ViewEngine::from(tera_engine))))
     }
