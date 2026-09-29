@@ -4,11 +4,13 @@ use loco_rs::prelude::*;
 use crate::views::haikunator::GeneratorResponse;
 
 #[debug_handler]
+#[allow(clippy::result_large_err)]
 async fn generate() -> Result<Response> {
     let generated = haikunator::Haikunator::default().haikunate();
     format::json(GeneratorResponse::generate(&generated))
 }
 
+#[allow(clippy::result_large_err)]
 async fn generate_txt() -> Result<Response> {
     let generated = haikunator::Haikunator::default().haikunate();
     format::text(&generated)
