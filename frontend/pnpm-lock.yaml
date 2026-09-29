@@ -280,8 +280,8 @@ packages:
     resolution: {integrity: sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA==}
     engines: {node: '>= 6'}
 
-  caniuse-lite@1.0.30001660:
-    resolution: {integrity: sha512-GacvNTTuATm26qC74pt+ad1fW15mlQ/zuTzzY1ZoIzECTP8HURDfF43kNxPgf7H1jmelCBQTTbBNxdSXOA7Bqg==}
+  caniuse-lite@1.0.30001813:
+    resolution: {integrity: sha512-zfjJo4rM0+fUomGDBW/xcDjhIwz/210DGvip2MAMDZ8KHcRPnOHmEgHPZP0UHlZoxr8fYKVJOqcORhYQcG4FKQ==}
 
   chokidar@3.6.0:
     resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
@@ -789,7 +789,7 @@ snapshots:
   '@rsbuild/shared@0.7.10(@swc/helpers@0.5.3)':
     dependencies:
       '@rspack/core': 0.7.5(@swc/helpers@0.5.3)
-      caniuse-lite: 1.0.30001660
+      caniuse-lite: 1.0.30001813
       html-webpack-plugin: html-rspack-plugin@5.7.2(@rspack/core@0.7.5(@swc/helpers@0.5.3))
       postcss: 8.4.45
     optionalDependencies:
@@ -840,7 +840,7 @@ snapshots:
     dependencies:
       '@module-federation/runtime-tools': 0.1.6
       '@rspack/binding': 0.7.5
-      caniuse-lite: 1.0.30001660
+      caniuse-lite: 1.0.30001813
       tapable: 2.2.1
       webpack-sources: 3.2.3
     optionalDependencies:
@@ -898,7 +898,7 @@ snapshots:
 
   camelcase-css@2.0.1: {}
 
-  caniuse-lite@1.0.30001660: {}
+  caniuse-lite@1.0.30001813: {}
 
   chokidar@3.6.0:
     dependencies:
