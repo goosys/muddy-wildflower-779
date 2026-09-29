@@ -28,17 +28,17 @@ broken-wildflower-1928
 
 ```console
 $ rustc --version
-rustc 1.86.0 (05f9846f8 2025-03-31)
+rustc 1.98.1 (48a229cea 2026-09-01)
 $ cargo --version
-cargo 1.86.0 (adf9b6ad1 2025-02-28)
-$ loco --version
-loco 0.15.0
+cargo 1.98.1 (797e8a9bc 2026-08-05)
+$ cargo loco --version
+loco-rs 0.15.0
 $ cargo shuttle --version
-cargo-shuttle 0.53.0
+cargo-shuttle 0.57.3
 $ npm --version
-10.9.2
+11.19.0
 $ pnpm --version
-10.9.0
+12.8.1
 ```
 
 ### Start frontend
