@@ -33,8 +33,6 @@ $ cargo --version
 cargo 1.98.1 (797e8a9bc 2026-08-05)
 $ cargo loco --version
 loco-rs 0.15.0
-$ cargo shuttle --version
-cargo-shuttle 0.57.3
 $ npm --version
 11.19.0
 $ pnpm --version
@@ -66,17 +64,6 @@ To format and auto-fix your code, you can use the following command:
 
 ```console
 $ cargo fmt --all
-```
-
-# Deployment
-
-Deploy to [Shuttle](https://console.shuttle.dev/):
-
-```console
-$ pushd frontend
-$ pnpm build
-$ popd
-$ cargo shuttle deploy
 ```
 
 # Dependencies

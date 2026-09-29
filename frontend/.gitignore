@@ -30,5 +30,4 @@ dist/
 .env.production.local
 .env.test.local
 
-# For deployment to Shuttle
 #!/dist/
