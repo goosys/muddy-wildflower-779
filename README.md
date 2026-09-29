@@ -32,7 +32,7 @@ rustc 1.98.1 (48a229cea 2026-09-01)
 $ cargo --version
 cargo 1.98.1 (797e8a9bc 2026-08-05)
 $ cargo loco --version
-loco-rs 0.15.0
+loco-rs 1.2.0
 $ npm --version
 11.19.0
 $ pnpm --version
