@@ -50,7 +50,7 @@ export const HaikunatorGenerator = () => {
           <button
             type="button"
             aria-label="Copy generated string"
-            onClick={(e) => {
+            onClick={() => {
               navigator.clipboard.writeText(generatedString);
             }}
             className={`text-gray-600 hover:text-gray-800 focus:outline-none ${generatedString ? "visible" : "invisible"}`}
