@@ -3,9 +3,7 @@ use axum::{
     http::{header, Method, Request, StatusCode},
     response::Response,
 };
-use haikunator_worker::{
-    controllers::haikunator::axum_router, views::haikunator::GeneratorResponse,
-};
+use haikunator_worker::{controllers::axum_router, views::haikunator::GeneratorResponse};
 use tower::ServiceExt;
 
 async fn request(method: Method, path: &str) -> Response {

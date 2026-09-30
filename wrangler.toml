@@ -1,9 +1,13 @@
 name = "haikunator-generator"
 main = "build/index.js"
 compatibility_date = "2026-09-30"
-compatibility_flags = ["new_module_registry", "nodejs_compat"]
+compatibility_flags = ["new_module_registry", "nodejs_compat", "enable_request_signal"]
 workers_dev = true
 routes = [{ pattern = "haikunator-generator.goosysapp.net", custom_domain = true }]
+
+[dev]
+# Keep local MCP Host and Origin headers local instead of using the Custom Domain.
+host = "127.0.0.1:8787"
 
 [build]
 command = "pnpm build"
@@ -11,4 +15,4 @@ command = "pnpm build"
 [assets]
 directory = ".assets"
 not_found_handling = "404-page"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/api/*", "/mcp"]

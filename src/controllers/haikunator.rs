@@ -3,11 +3,15 @@ use axum::{routing::get, Json, Router};
 use crate::views::haikunator::GeneratorResponse;
 
 async fn generate() -> Json<GeneratorResponse> {
-    let generated = haikunator::Haikunator::default().haikunate();
+    let generated = haikunate();
     Json(GeneratorResponse::generate(&generated))
 }
 
 async fn generate_txt() -> String {
+    haikunate()
+}
+
+pub(super) fn haikunate() -> String {
     haikunator::Haikunator::default().haikunate()
 }
 
