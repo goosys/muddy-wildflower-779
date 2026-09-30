@@ -1,16 +1,22 @@
 use axum::Router;
 use rmcp::{
     handler::server::wrapper::Parameters,
-    model::CallToolResult,
-    schemars, tool, tool_handler, tool_router,
+    model::{CallToolResult, ProgressNotificationParam},
+    schemars,
+    service::RequestContext,
+    tool, tool_handler, tool_router,
     transport::streamable_http_server::{
         session::never::NeverSessionManager, StreamableHttpServerConfig, StreamableHttpService,
     },
-    ServerHandler,
+    ErrorData, RoleServer, ServerHandler,
 };
 use serde::Deserialize;
+use std::time::Duration;
+use tokio::{sync::mpsc, task::JoinHandle};
 
 use crate::views::haikunator::GeneratorResponse;
+
+pub const MAX_REQUEST_BYTES: usize = 16 * 1024;
 
 #[derive(Debug, Default, schemars::JsonSchema)]
 #[serde(default, deny_unknown_fields)]
@@ -27,6 +33,34 @@ impl<'de> Deserialize<'de> for GenParams {
         } else {
             Err(serde::de::Error::custom("gen does not accept arguments"))
         }
+    }
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(default, deny_unknown_fields)]
+struct GenContinuousParams {
+    /// Number of strings to generate, from 1 to 20. Defaults to 5.
+    #[schemars(range(min = 1, max = 20))]
+    count: u8,
+    /// Time between generated strings in milliseconds, from 100 to 2000. Defaults to 500.
+    #[schemars(range(min = 100, max = 2000))]
+    interval_ms: u64,
+}
+
+impl Default for GenContinuousParams {
+    fn default() -> Self {
+        Self {
+            count: 5,
+            interval_ms: 500,
+        }
+    }
+}
+
+struct GenerationTask(JoinHandle<()>);
+
+impl Drop for GenerationTask {
+    fn drop(&mut self) {
+        self.0.abort();
     }
 }
 
@@ -49,6 +83,89 @@ impl HaikunatorGenerator {
         let generated = super::haikunator::haikunate();
         CallToolResult::structured(serde_json::json!(GeneratorResponse::generate(&generated)))
     }
+
+    #[tool(
+        title = "Haikunator Generator Continuous Generation",
+        description = "Generate a finite sequence of Heroku-like memorable random strings at fixed intervals. Each result has the same JSON shape as /api/gen: {\"name\":\"falling-disk-1736\"}. Supply a progress token to receive each result as a progress notification; the final result contains a results array.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn gen_continuous(
+        &self,
+        Parameters(params): Parameters<GenContinuousParams>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        if !(1..=20).contains(&params.count) || !(100..=2000).contains(&params.interval_ms) {
+            return Err(ErrorData::invalid_params(
+                "count must be between 1 and 20; interval_ms must be between 100 and 2000",
+                None,
+            ));
+        }
+
+        let progress_token = context.meta.get_progress_token();
+        if let Some(token) = &progress_token {
+            context
+                .peer
+                .notify_progress(
+                    ProgressNotificationParam::new(token.clone(), 0.0)
+                        .with_total(f64::from(params.count))
+                        .with_message("Starting continuous generation".to_owned()),
+                )
+                .await
+                .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
+        }
+
+        let (sender, mut receiver) = mpsc::channel(1);
+        let cancellation = context.ct.clone();
+        let producer = tokio::spawn(async move {
+            for _ in 0..params.count {
+                tokio::select! {
+                    () = cancellation.cancelled() => return,
+                    () = tokio::time::sleep(Duration::from_millis(params.interval_ms)) => {},
+                }
+                let generated = super::haikunator::haikunate();
+                let response = GeneratorResponse::generate(&generated);
+                tokio::select! {
+                    () = cancellation.cancelled() => return,
+                    sent = sender.send(response) => {
+                        if sent.is_err() {
+                            return;
+                        }
+                    },
+                }
+            }
+        });
+        // Abort the producer even if the handler is dropped before it can observe cancellation.
+        let _producer = GenerationTask(producer);
+        let mut results = Vec::with_capacity(usize::from(params.count));
+        for completed in 1..=params.count {
+            let generated = tokio::select! {
+                () = context.ct.cancelled() => {
+                    return Err(ErrorData::internal_error("Continuous generation cancelled", None));
+                },
+                item = receiver.recv() => item,
+            }
+            .ok_or_else(|| ErrorData::internal_error("Continuous generation ended early", None))?;
+            if let Some(token) = &progress_token {
+                context
+                    .peer
+                    .notify_progress(
+                        ProgressNotificationParam::new(token.clone(), f64::from(completed))
+                            .with_total(f64::from(params.count))
+                            .with_message(serde_json::json!(&generated).to_string()),
+                    )
+                    .await
+                    .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
+            }
+            results.push(generated);
+        }
+        Ok(CallToolResult::structured(
+            serde_json::json!({ "results": results }),
+        ))
+    }
 }
 
 #[expect(
@@ -58,7 +175,7 @@ impl HaikunatorGenerator {
 #[tool_handler(
     name = "haikunator-generator",
     version = "0.1.0",
-    instructions = "Haikunator Generator generates Heroku-like memorable random strings. Use gen for the same JSON response as /api/gen. Generated strings are not guaranteed to be unique."
+    instructions = "Haikunator Generator generates Heroku-like memorable random strings. Use gen for the same JSON response as /api/gen, or gen_continuous for a finite sequence with progress. Generated strings are not guaranteed to be unique."
 )]
 impl ServerHandler for HaikunatorGenerator {}
 
@@ -66,7 +183,7 @@ pub fn axum_router() -> Router {
     let config = StreamableHttpServerConfig::default()
         .with_legacy_session_mode(false)
         .with_json_response(true)
-        .with_max_request_body_bytes(16 * 1024)
+        .with_max_request_body_bytes(MAX_REQUEST_BYTES)
         .with_allowed_hosts([
             "haikunator-generator.goosysapp.net",
             "haikunator-generator.goosys.workers.dev",
