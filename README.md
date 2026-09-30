@@ -23,6 +23,36 @@ curl https://haikunator-generator.goosysapp.net/api/gen.txt
 The local development commands below do not deploy the application or change
 the public service.
 
+### MCP
+
+The same Worker exposes a stateless Streamable HTTP MCP server at `/mcp`, using
+the official Rust SDK `rmcp` on Axum and Tokio. The React page and existing
+`/api/gen` and `/api/gen.txt` endpoints remain available.
+
+Connect an MCP client to `http://localhost:8787/mcp` during local development.
+After deploying this change, the endpoint is
+`https://haikunator-generator.goosysapp.net/mcp`.
+
+The `gen` tool is titled "Haikunator Generator", matching this project and the
+existing `/api/gen` interface. It takes no arguments and returns one Heroku-like
+memorable random string as structured content: `{"name":"falling-disk-1736"}`,
+with equivalent JSON text content. Generated strings are not guaranteed to be
+unique.
+
+The server uses JSON responses without session IDs or a persistent SSE stream.
+It supports initialization and tool calls from existing Streamable HTTP clients.
+Like the existing API, it generates random strings without authentication.
+MCP requests with a browser Origin must come from the configured public URLs or local ports
+8787/5153; requests without Origin are accepted for native MCP clients.
+
+To try the tool with the official MCP Inspector while `pnpm dev` is running:
+
+```sh
+pnpm dlx @modelcontextprotocol/inspector@2.8.0 --cli \
+  http://localhost:8787/mcp --transport http --method tools/call \
+  --tool-name gen
+```
+
 ## Development
 
 Open the repository in its DevContainer. It provides Node.js 24.21.0,
@@ -109,7 +139,9 @@ pnpm test
 ```
 
 The HTTP smoke test checks JSON and text API responses, concurrent requests,
-HEAD/405/404 responses, CORS, security headers, and static assets. Set
+HEAD/405/404 responses, CORS, security headers, and static assets. It also checks
+the MCP lifecycle, tool discovery and calls, argument validation, concurrent
+MCP/API requests, Origin validation, and the MCP request size limit. Set
 `WORKERS_TEST_URL` to test a different local URL. CI runs the Rust checks, the
 Emscripten build, and the local HTTP smoke test.
 
@@ -122,7 +154,7 @@ The SDK and `worker-build` share the fixed revision
 The build script selects Cargo's previous output layout for the pinned
 `worker-build` using the
 [temporary Cargo compatibility option](https://github.com/rust-lang/cargo/pull/16807).
-The Worker entry point buffers API responses up to 64 KiB to avoid an issue in
+The Worker entry point buffers API and MCP responses up to 64 KiB to avoid an issue in
 the experimental SDK's streaming response bridge.
 
 `security-headers.json` shares the development CSP and GitHub security-header
@@ -137,3 +169,4 @@ preset between API and static responses.
 | Tokio | [tokio.rs](https://tokio.rs/) |
 | Cloudflare Workers SDK | [cloudflare/workers-rs](https://github.com/cloudflare/workers-rs) |
 | Haikunator | [nishanths/rust-haikunator](https://github.com/nishanths/rust-haikunator) |
+| MCP Rust SDK | [modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk) |

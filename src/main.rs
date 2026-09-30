@@ -23,7 +23,7 @@ async fn secure_headers(mut response: Response) -> Response {
 
 #[event(fetch)]
 async fn fetch(req: HttpRequest, _env: Env, _ctx: Context) -> worker::Result<worker::Response> {
-    let router = haikunator_worker::controllers::haikunator::axum_router()
+    let router = haikunator_worker::controllers::axum_router()
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
@@ -32,7 +32,7 @@ async fn fetch(req: HttpRequest, _env: Env, _ctx: Context) -> worker::Result<wor
         )
         .layer(middleware::map_response(secure_headers));
     let (parts, body) = router.oneshot(req).await?.into_parts();
-    // These small API responses do not need the SDK's experimental stream bridge.
+    // These small API and JSON MCP responses do not need the experimental stream bridge.
     let bytes = axum::body::to_bytes(body, 64 * 1024)
         .await
         .map_err(|err| worker::Error::RustError(err.to_string()))?;

@@ -79,6 +79,95 @@ for (const path of ["/api/gen", "/api/gen.txt"]) {
 }
 await request("/api/does-not-exist", { status: 404 });
 
+const mcpHeaders = {
+  "Content-Type": "application/json",
+  Accept: "application/json, text/event-stream",
+  "MCP-Protocol-Version": "2025-11-25",
+  Origin: base.origin,
+};
+let mcpRequestId = 0;
+async function mcp(method, params = {}) {
+  const id = ++mcpRequestId;
+  const response = await request("/mcp", {
+    method: "POST",
+    headers: mcpHeaders,
+    body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
+  });
+  assert.ok(response.headers.get("content-type")?.startsWith("application/json"));
+  assert.equal(response.headers.get("mcp-session-id"), null);
+  const message = await response.json();
+  assert.equal(message.jsonrpc, "2.0");
+  assert.equal(message.id, id);
+  return message;
+}
+
+function assertMcpGeneratedString(message) {
+  assert.equal(message.error, undefined);
+  const result = message.result;
+  assert.equal(result.isError, false);
+  assert.deepEqual(Object.keys(result.structuredContent), ["name"]);
+  assertName(result.structuredContent.name);
+  assert.deepEqual(JSON.parse(result.content[0].text), result.structuredContent);
+}
+
+const initialized = await mcp("initialize", {
+  protocolVersion: "2025-11-25",
+  capabilities: {},
+  clientInfo: { name: "haikunator-smoke", version: "1.0.0" },
+});
+assert.equal(initialized.result.protocolVersion, "2025-11-25");
+assert.equal(initialized.result.serverInfo.name, "haikunator-generator");
+assert.ok(initialized.result.capabilities.tools);
+const notification = await request("/mcp", {
+  method: "POST",
+  headers: mcpHeaders,
+  status: 202,
+  body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
+});
+assert.equal(await notification.text(), "");
+const listed = await mcp("tools/list");
+assert.deepEqual(listed.result.tools.map((tool) => tool.name), ["gen"]);
+assert.equal(listed.result.tools[0].title, "Haikunator Generator");
+assert.equal(listed.result.tools[0].annotations.readOnlyHint, true);
+assert.match(listed.result.tools[0].description, /Heroku-like memorable random string/);
+assert.equal(listed.result.tools[0].inputSchema.type, "object");
+assert.deepEqual(listed.result.tools[0].inputSchema.properties ?? {}, {});
+assert.equal(listed.result.tools[0].inputSchema.additionalProperties, false);
+assertMcpGeneratedString(await mcp("tools/call", { name: "gen", arguments: {} }));
+assertMcpGeneratedString(await mcp("tools/call", { name: "gen" }));
+await Promise.all(Array.from({ length: 10 }, async () => {
+  assertMcpGeneratedString(await mcp("tools/call", { name: "gen", arguments: {} }));
+  await assertApi("/api/gen");
+}));
+for (const arguments_ of [{ count: 1 }, { delimiter: "-" }, { unknown: true }]) {
+  const message = await mcp("tools/call", { name: "gen", arguments: arguments_ });
+  assert.ok(message.error?.code === -32602 || message.result?.isError === true);
+}
+for (const method of ["GET", "DELETE"]) {
+  await request("/mcp", { method, headers: mcpHeaders, status: 405 });
+}
+await request("/mcp", {
+  method: "POST",
+  headers: { ...mcpHeaders, Origin: origin },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+  status: 403,
+});
+await request("/mcp", {
+  method: "POST",
+  headers: mcpHeaders,
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping", params: { padding: "x".repeat(17 * 1024) } }),
+  status: 413,
+});
+const mcpPreflight = await request("/mcp", {
+  method: "OPTIONS",
+  headers: {
+    Origin: base.origin,
+    "Access-Control-Request-Method": "POST",
+    "Access-Control-Request-Headers": "content-type,mcp-protocol-version",
+  },
+});
+assert.equal(mcpPreflight.headers.get("access-control-allow-origin"), "*");
+
 const index = await request("/");
 assert.ok(index.headers.get("content-type")?.startsWith("text/html"));
 const html = await index.text();
@@ -102,6 +191,9 @@ assert.deepEqual(
   [...new Uint8Array(await favicon.arrayBuffer()).slice(0, 4)],
   [0, 0, 1, 0],
 );
+const faviconSvg = await request("/favicon.svg");
+assert.ok(faviconSvg.headers.get("content-type")?.startsWith("image/svg+xml"));
+assert.match(await faviconSvg.text(), /Haikunator dice/);
 const ogp = await request("/ogp.png");
 assert.ok(ogp.headers.get("content-type")?.startsWith("image/png"));
 assert.deepEqual(
