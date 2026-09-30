@@ -1,24 +1,18 @@
-use axum::debug_handler;
-use loco_rs::prelude::*;
+use axum::{routing::get, Json, Router};
 
 use crate::views::haikunator::GeneratorResponse;
 
-#[debug_handler]
-#[allow(clippy::result_large_err)]
-async fn generate() -> Result<Response> {
+async fn generate() -> Json<GeneratorResponse> {
     let generated = haikunator::Haikunator::default().haikunate();
-    format::json(GeneratorResponse::generate(&generated))
+    Json(GeneratorResponse::generate(&generated))
 }
 
-#[allow(clippy::result_large_err)]
-async fn generate_txt() -> Result<Response> {
-    let generated = haikunator::Haikunator::default().haikunate();
-    format::text(&generated)
+async fn generate_txt() -> String {
+    haikunator::Haikunator::default().haikunate()
 }
 
-pub fn routes() -> Routes {
-    Routes::new()
-        .prefix("api")
-        .add("/gen", get(generate))
-        .add("/gen.txt", get(generate_txt))
+pub fn axum_router() -> Router {
+    Router::new()
+        .route("/api/gen", get(generate))
+        .route("/api/gen.txt", get(generate_txt))
 }

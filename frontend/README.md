@@ -1,42 +1,39 @@
-# SaaS Frontend
+# Haikunator Generator Frontend
 
-## Batteries included
+The frontend uses React, TypeScript, Rsbuild, Tailwind CSS, and Biome. Cloudflare
+Workers serves the generated frontend and the Axum API.
 
-- [TypeScript](https://www.typescriptlang.org/): A typed superset of JavaScript
-- [Rsbuild](https://rsbuild.dev/): A Rust-based web build tool
-- [Biome](https://biomejs.dev/): A Rust-based formatter and sensible linter for the web
-- [React](https://reactjs.org/): A JavaScript library for building user interfaces
+## Development
 
-If you don't like React for some reason, Rsbuild makes it easy to replace it with something else!
-
-# Development
-
-To get started with the development of the SaaS frontend, follow these steps:
-
-### 1. Install Packages
-
-Use the following command to install the required packages using pnpm:
+Run these commands from the repository root. The DevContainer installs the pnpm
+workspace dependencies automatically; outside it, install them first:
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
-### 2. Run in Development Mode
-
-Once the packages are installed, run your frontend application in development mode with the following command:
+Start the local Worker:
 
 ```sh
 pnpm dev
 ```
 
-This will start the development frontend server serving via vit
-
-### 3. Build The application
-
-To build your application run the following command:
+For frontend hot reload, start Rsbuild in another terminal:
 
 ```sh
-pnpm build
+pnpm --dir frontend dev
 ```
 
-After the build `dist` folder is ready to served by loco. run loco `cargo loco start` and the frontend application will served via Loco
+Open [http://localhost:5153/](http://localhost:5153/). Requests to `/api` are
+proxied to the Worker on port 8787. The Worker also serves the built site at
+[http://localhost:8787/](http://localhost:8787/).
+
+## Build and lint
+
+`pnpm build` from the repository root builds the frontend into `.assets` and
+compiles the Emscripten Worker. A frontend-only build uses `frontend/dist`:
+
+```sh
+pnpm --dir frontend build
+pnpm --dir frontend lint
+```

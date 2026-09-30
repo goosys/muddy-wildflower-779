@@ -5,6 +5,9 @@ import { pluginReact } from "@rsbuild/plugin-react";
 export default defineConfig({
   plugins: [pluginReact()],
   output: {
+    distPath: {
+      root: process.env.WORKERS_FRONTEND_DIST || "dist",
+    },
     copy: [
       { from: './src/assets' },
     ],
@@ -39,14 +42,12 @@ export default defineConfig({
       404: "./src/404.tsx",
     },
   },
-  dev: {
-    writeToDisk: true,
-  },
   server: {
+    host: "0.0.0.0",
     port: 5153,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5150",
+        target: "http://127.0.0.1:8787",
         changeOrigin: true,
         secure: false,
       },

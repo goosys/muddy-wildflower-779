@@ -1,0 +1,8 @@
+.git
+**/node_modules
+**/target
+frontend/dist
+.assets
+.wrangler
+build
+.pnpm-store
