@@ -8,15 +8,15 @@ on Cloudflare Workers. Workers Static Assets serves the React frontend.
 
 ## Usage
 
-Public service: [https://haikunator-generator.shuttle.app/](https://haikunator-generator.shuttle.app/)
+Public service: [https://haikunator-generator.goosysapp.net/](https://haikunator-generator.goosysapp.net/)
 
 ```sh
 # JSON
-curl https://haikunator-generator.shuttle.app/api/gen
+curl https://haikunator-generator.goosysapp.net/api/gen
 # {"name":"falling-disk-1736"}
 
 # Plain text
-curl https://haikunator-generator.shuttle.app/api/gen.txt
+curl https://haikunator-generator.goosysapp.net/api/gen.txt
 # broken-wildflower-1928
 ```
 
@@ -70,6 +70,25 @@ pnpm install --frozen-lockfile
 Use the same `pnpm build` and `pnpm dev` commands. The root `rust-toolchain.toml`
 selects the fixed beta, and `pnpm-workspace.yaml` includes the frontend under one
 root lockfile.
+
+## Deployment
+
+Authenticate with Cloudflare from the DevContainer:
+
+```sh
+pnpm exec wrangler login --device --browser=false
+```
+
+Then deploy from the repository root:
+
+```sh
+pnpm exec wrangler deploy
+```
+
+Wrangler runs `pnpm build` and publishes the Worker and frontend together. The
+Worker is named `haikunator-generator`. Its Custom Domain is configured in
+`wrangler.toml`; Cloudflare manages the DNS record and certificate for
+`haikunator-generator.goosysapp.net`. The `workers.dev` URL remains enabled.
 
 ## Checks
 
