@@ -1,7 +1,9 @@
-name = "haikunator-generator-emscripten"
+name = "haikunator-generator"
 main = "build/index.js"
 compatibility_date = "2026-09-30"
 compatibility_flags = ["new_module_registry", "nodejs_compat"]
+workers_dev = true
+routes = [{ pattern = "haikunator-generator.goosysapp.net", custom_domain = true }]
 
 [build]
 command = "pnpm build"

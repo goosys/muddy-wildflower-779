@@ -13,7 +13,7 @@ export default defineConfig({
     ],
   },
   html: {
-    favicon: "src/assets/favicon.ico",
+    favicon: "src/assets/favicon.svg",
     title({ entryName }) {
       const titles = {
         404: "404 Not Found"
@@ -23,15 +23,15 @@ export default defineConfig({
     meta: {
       "og:title": { property: "og:title", content: "Haikunator Generator"},
       "og:type": { property: "og:type", content: "website"},
-      "og:url": { property: "og:url", content: "https://haikunator-generator.shuttle.app/"},
-      "og:image": { property: "og:image", content: "https://haikunator-generator.shuttle.app/ogp.png"},
+      "og:url": { property: "og:url", content: "https://haikunator-generator.goosysapp.net/"},
+      "og:image": { property: "og:image", content: "https://haikunator-generator.goosysapp.net/ogp.png"},
       "og:site_name": { property: "og:site_name", content: "Haikunator Generator"},
       "og:description": { property: "og:description", content: "Heroku-like memorable random string"},
       "twitter:card": "summary_large_image",
       "twitter:description": "Heroku-like memorable random string",
       "twitter:title": "Haikunator Generator",
       "twitter:site": "@goosys",
-      "twitter:image": "https://haikunator-generator.shuttle.app/ogp.png",
+      "twitter:image": "https://haikunator-generator.goosysapp.net/ogp.png",
       "twitter:creator": "@goosys",
       description: "Heroku-like memorable random string",
     },
