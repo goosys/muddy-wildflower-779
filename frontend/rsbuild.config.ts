@@ -13,7 +13,7 @@ export default defineConfig({
     ],
   },
   html: {
-    favicon: "src/assets/favicon.ico",
+    favicon: "src/assets/favicon.svg",
     title({ entryName }) {
       const titles = {
         404: "404 Not Found"
