@@ -1,0 +1,14 @@
+{
+  "name": "haikunator-worker",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.8.1",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "wrangler dev --ip 0.0.0.0 --port 8787",
+    "test": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.143.0"
+  }
+}

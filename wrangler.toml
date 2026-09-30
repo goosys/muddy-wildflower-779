@@ -1,0 +1,12 @@
+name = "haikunator-generator-emscripten"
+main = "build/index.js"
+compatibility_date = "2026-09-30"
+compatibility_flags = ["new_module_registry", "nodejs_compat"]
+
+[build]
+command = "pnpm build"
+
+[assets]
+directory = ".assets"
+not_found_handling = "404-page"
+run_worker_first = ["/api/*"]

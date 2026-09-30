@@ -1,13 +1,18 @@
 {
-    "name": "Loco",
+    "name": "Haikunator Workers",
     "dockerComposeFile": "compose.yaml",
-    "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+    "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && pnpm install --frozen-lockfile",
     "service": "app",
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "workspaceFolder": "/workspace",
+    "remoteUser": "vscode",
     "forwardPorts": [
-        5150, 5153
+        5153, 8787
     ],
     "features": {
-        "ghcr.io/devcontainers/features/node:1": {}
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "24.21.0",
+            "pnpmVersion": "12.8.1",
+            "nodeGypDependencies": false
+        }
     }
 }
