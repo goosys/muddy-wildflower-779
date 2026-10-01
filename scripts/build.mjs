@@ -20,7 +20,9 @@ const security = JSON.parse(readFileSync(new URL("../security-headers.json", imp
 writeFileSync(`${assets}/_headers`, "/*\n" + Object.entries({
   ...security,
   "Access-Control-Allow-Origin": "*",
-}).map(([name, value]) => `  ${name}: ${value}\n`).join(""));
+}).map(([name, value]) => `  ${name}: ${value}\n`).join("") +
+  "\n/index.md\n  Content-Type: text/markdown; charset=utf-8\n" +
+  "\n/sitemap.xml\n  Content-Type: application/xml; charset=utf-8\n");
 run("worker-build", ["--emscripten", "--release", "--locked"], {
   ...process.env,
   // Pinned worker-build collects inline JS from Cargo's previous output layout.

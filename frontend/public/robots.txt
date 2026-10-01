@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://haikunator-generator.goosysapp.net/sitemap.xml

@@ -371,6 +371,29 @@ for (const url of [...css, ...js]) {
   assert.ok((await response.text()).length > 0, url.pathname);
 }
 
+assert.match(html, /rel="alternate"[^>]*type="text\/markdown"|type="text\/markdown"[^>]*rel="alternate"/);
+assert.match(html, /href="\/index\.md"/);
+assert.match(html, /rel="canonical"/);
+const markdown = await request("/index.md");
+assert.ok(markdown.headers.get("content-type")?.startsWith("text/markdown"));
+const overview = await markdown.text();
+for (const heading of ["# Haikunator Generator", "## REST API", "## MCP", "## Terms of Use"]) {
+  assert.ok(overview.includes(heading), heading);
+}
+assert.ok(overview.includes("gen_continuous"));
+assert.ok(overview.includes("https://docs.rs/haikunator/latest/haikunator/struct.Haikunator.html"));
+const sitemap = await request("/sitemap.xml");
+assert.match(sitemap.headers.get("content-type") ?? "", /^(application|text)\/xml/);
+const sitemapBody = await sitemap.text();
+assert.match(sitemapBody, /xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9"/);
+assert.deepEqual([...sitemapBody.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]), [
+  "https://haikunator-generator.goosysapp.net/",
+  "https://haikunator-generator.goosysapp.net/index.md",
+]);
+const robots = await request("/robots.txt");
+assert.ok(robots.headers.get("content-type")?.startsWith("text/plain"));
+assert.match(await robots.text(), /Sitemap: https:\/\/haikunator-generator.goosysapp.net\/sitemap.xml/);
+
 const favicon = await request("/favicon.ico");
 assert.deepEqual(
   [...new Uint8Array(await favicon.arrayBuffer()).slice(0, 4)],

@@ -1,0 +1,11 @@
+{
+  "url": "https://haikunator-generator.goosysapp.net",
+  "github": "https://github.com/goosys/muddy-wildflower-779",
+  "poweredBy": "https://docs.rs/haikunator/latest/haikunator/struct.Haikunator.html",
+  "tagline": "Generates Heroku-like memorable random strings.",
+  "terms": [
+    "This service, including its web interface, API, and MCP endpoint, is free to use.",
+    "The service is provided “as is,” without warranties of availability, uptime, reliability, or suitability for any purpose. It may be changed, suspended, or discontinued without prior notice. Generated strings are not guaranteed to be unique.",
+    "You use this service at your own risk. To the extent permitted by applicable law, the operator is not liable for any loss or damage arising from the use of, or inability to use, this service. This does not exclude liability that cannot legally be excluded, including liability for intentional misconduct or gross negligence."
+  ]
+}
