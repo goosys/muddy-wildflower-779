@@ -61,7 +61,7 @@ not stop server-side generation; it still finishes within the 40-second limit.
 Cancellation of that JSON-only path has not been verified in production.
 Use a progress token when you need streaming results and interruption.
 
-The page includes a continuous-generation panel that calls this MCP tool,
+The page includes a continuous-generation example below the MCP instructions that calls this MCP tool,
 displays each result as it arrives, and lets you stop an active request. Normal
 generation and the existing APIs remain available while it is running.
 
@@ -95,6 +95,19 @@ curl --no-buffer http://localhost:8787/mcp \
   -H 'MCP-Protocol-Version: 2025-11-25' \
   --data '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"gen_continuous","arguments":{"count":5,"interval_ms":500},"_meta":{"progressToken":"demo"}}}'
 ```
+
+## Website content
+
+The page keeps the single-string generator above the API and MCP instructions.
+Copy controls confirm success and report errors. The footer links to the Terms
+of Use, the Markdown overview at `/index.md`, and `/sitemap.xml`.
+
+`frontend/src/content/site.json` is the shared source for public links and terms.
+`node scripts/generate-site-docs.mjs` regenerates the overview, sitemap, and
+robots.txt in `frontend/public`. Frontend build and development commands run it
+automatically. Regenerate these files after changing the shared content and
+commit the updated files together. The HTML head advertises the Markdown
+alternative; robots.txt advertises the sitemap.
 
 ## Development
 

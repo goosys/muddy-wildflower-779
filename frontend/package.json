@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "rsbuild dev",
-    "build": "rsbuild build",
+    "dev": "node ../scripts/generate-site-docs.mjs && rsbuild dev",
+    "build": "node ../scripts/generate-site-docs.mjs && rsbuild build",
     "lint": "biome check src/",
     "preview": "rsbuild preview"
   },
