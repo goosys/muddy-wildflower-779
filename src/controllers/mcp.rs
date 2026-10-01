@@ -1,4 +1,10 @@
-use axum::Router;
+use axum::{
+    extract::Request,
+    http::{header, StatusCode},
+    middleware::{self, Next},
+    response::IntoResponse,
+    Router,
+};
 use rmcp::{
     handler::server::wrapper::Parameters,
     model::{CallToolResult, ProgressNotificationParam},
@@ -14,9 +20,29 @@ use serde::Deserialize;
 use std::time::Duration;
 use tokio::{sync::mpsc, task::JoinHandle};
 
+pub use crate::config::AccessConfig;
 use crate::views::haikunator::GeneratorResponse;
 
 pub const MAX_REQUEST_BYTES: usize = 16 * 1024;
+
+#[derive(Debug, Clone, Copy, Default)]
+pub enum AccessPolicy {
+    #[default]
+    Public,
+    Development,
+}
+
+impl AccessPolicy {
+    /// Local access is enabled only by an explicit development binding.
+    #[must_use]
+    pub fn from_environment(value: Option<&str>) -> Self {
+        if value == Some("development") {
+            Self::Development
+        } else {
+            Self::Public
+        }
+    }
+}
 
 #[derive(Debug, Default, schemars::JsonSchema)]
 #[serde(default, deny_unknown_fields)]
@@ -180,28 +206,89 @@ impl HaikunatorGenerator {
 impl ServerHandler for HaikunatorGenerator {}
 
 pub fn axum_router() -> Router {
+    axum_router_with_access(AccessPolicy::Public, None)
+}
+
+pub fn axum_router_with_access(policy: AccessPolicy, request_authority: Option<&str>) -> Router {
+    axum_router_with_config(policy, request_authority, &crate::config::PUBLIC_ACCESS)
+}
+
+pub fn axum_router_with_config(
+    policy: AccessPolicy,
+    request_authority: Option<&str>,
+    access: &AccessConfig,
+) -> Router {
+    let preview = match policy {
+        AccessPolicy::Public => {
+            request_authority.and_then(|authority| access.preview_host(authority))
+        }
+        AccessPolicy::Development => None,
+    };
+    let (hosts, origins) = match policy {
+        AccessPolicy::Public => {
+            let mut hosts = access.public_hosts.to_vec();
+            let mut origins = access
+                .public_hosts
+                .iter()
+                .map(|host| format!("https://{host}:443"))
+                .collect::<Vec<_>>();
+            if let Some(host) = &preview {
+                // Trust only this Worker's preview namespace, and bind the
+                // inferred preview Origin to the current request's authority.
+                // A different Host header must not inherit its permissions.
+                hosts = vec![host.clone()];
+                origins.push(format!("https://{host}:443"));
+            }
+            (hosts, origins)
+        }
+        AccessPolicy::Development => (
+            ["localhost:8787", "127.0.0.1:8787"]
+                .map(str::to_owned)
+                .to_vec(),
+            [
+                "http://localhost:8787",
+                "http://127.0.0.1:8787",
+                "http://localhost:5153",
+                "http://127.0.0.1:5153",
+            ]
+            .map(str::to_owned)
+            .to_vec(),
+        ),
+    };
     let config = StreamableHttpServerConfig::default()
         .with_legacy_session_mode(false)
         .with_json_response(true)
         .with_max_request_body_bytes(MAX_REQUEST_BYTES)
-        .with_allowed_hosts([
-            "haikunator-generator.goosysapp.net",
-            "haikunator-generator.goosys.workers.dev",
-            "localhost:8787",
-            "127.0.0.1:8787",
-        ])
-        .with_allowed_origins([
-            "https://haikunator-generator.goosysapp.net:443",
-            "https://haikunator-generator.goosys.workers.dev:443",
-            "http://localhost:8787",
-            "http://127.0.0.1:8787",
-            "http://localhost:5153",
-            "http://127.0.0.1:5153",
-        ]);
+        .with_allowed_hosts(hosts)
+        .with_allowed_origins(origins);
     let service = StreamableHttpService::new(
         || Ok(HaikunatorGenerator),
         NeverSessionManager::default().into(),
         config,
     );
-    Router::new().route_service("/mcp", service)
+    let router = Router::new().route_service("/mcp", service);
+    if let Some(preview) = preview {
+        let access = access.clone();
+        // rmcp treats an allowed hostname without a port as allowing any port.
+        // Keep a preview's actual Host bound to the validated request authority.
+        router.layer(middleware::from_fn(move |request: Request, next: Next| {
+            let mut hosts = request.headers().get_all(header::HOST).iter();
+            let valid = hosts.next().is_none_or(|value| {
+                value
+                    .to_str()
+                    .ok()
+                    .and_then(|authority| access.preview_host(authority))
+                    .is_some_and(|host| host == preview)
+            }) && hosts.next().is_none();
+            async move {
+                if valid {
+                    next.run(request).await
+                } else {
+                    (StatusCode::FORBIDDEN, "Forbidden: Invalid preview Host").into_response()
+                }
+            }
+        }))
+    } else {
+        router
+    }
 }

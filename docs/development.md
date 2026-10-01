@@ -33,6 +33,8 @@ pnpm install --frozen-lockfile
 
 Start the Worker with `pnpm dev`; Wrangler builds it before startup. The first Rust build downloads the Emscripten SDK.
 
+`pnpm dev` selects Wrangler's `development` environment, which has no public routes and allows local MCP Hosts and browser Origins. A direct `wrangler dev` command must also include `--env development`. See [MCP access policy](mcp.md#access-policy) for the allowed local ports.
+
 | Task | Command | Result |
 | --- | --- | --- |
 | Run Worker and built frontend | `pnpm dev` | [localhost:8787](http://localhost:8787/) |
@@ -67,3 +69,33 @@ pnpm exec wrangler deploy
 ```
 
 Wrangler builds and publishes the Worker and frontend together. The Worker name and Custom Domain are configured in `wrangler.toml`.
+
+Production uses the public MCP access policy and rejects local Hosts and Origins. Only `MCP_ENVIRONMENT=development` enables local access; an unset or unrecognized value uses the public policy.
+
+### Service settings
+
+For a fork or a different deployment, update `url` (the public HTTPS URL) and
+`workersDevUrl` (the Worker's `workers.dev` HTTPS URL) in
+`frontend/src/content/site.json`, plus the Worker `name` and Custom Domain route
+in `wrangler.toml`. Use canonical HTTPS origins without a trailing slash,
+explicit port, or path. The build validates the URLs and checks that these
+settings agree.
+
+The frontend metadata, public site documents, MCP access policy, and HTTP smoke
+test use this shared configuration. The Rust Worker embeds it at compile time,
+so run `pnpm build` after changing it. To regenerate only the public documents,
+run `node scripts/generate-site-docs.mjs`.
+
+### Preview URLs
+
+To upload a version with a readable preview alias:
+
+```sh
+pnpm exec wrangler versions upload --preview-alias staging
+```
+
+When Version URLs are enabled for the Worker, its MCP endpoint is
+`https://staging-<worker>.<account>.workers.dev/mcp`, using the Worker and account
+from `workersDevUrl`. Uploading a version does not change production traffic.
+
+The [MCP access policy](mcp.md#access-policy) automatically recognizes this Worker's branch, deployment, and version preview URLs. See Cloudflare's [Version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/) and [Workers Previews](https://developers.cloudflare.com/workers/previews/) for the two workflows. This repository does not enable additional public preview routes in its configuration.

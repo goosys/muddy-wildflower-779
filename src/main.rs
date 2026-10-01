@@ -1,4 +1,5 @@
 use axum::{http::header::HeaderName, http::HeaderValue, middleware, response::Response};
+use haikunator_worker::controllers::mcp::AccessPolicy;
 use std::{collections::BTreeMap, sync::LazyLock};
 use tower::ServiceExt;
 use tower_http::cors::{Any, CorsLayer};
@@ -24,8 +25,20 @@ async fn secure_headers(mut response: Response) -> Response {
     response
 }
 
-fn router() -> axum::Router {
-    decorate_router(haikunator_worker::controllers::axum_router())
+fn router<T>(policy: AccessPolicy, request: &axum::http::Request<T>) -> axum::Router {
+    let authority = request
+        .uri()
+        .authority()
+        .map(axum::http::uri::Authority::as_str)
+        .or_else(|| {
+            request
+                .headers()
+                .get(axum::http::header::HOST)
+                .and_then(|value| value.to_str().ok())
+        });
+    decorate_router(haikunator_worker::controllers::axum_router_with_access(
+        policy, authority,
+    ))
 }
 
 fn decorate_router(router: axum::Router) -> axum::Router {
@@ -56,11 +69,17 @@ async fn buffered_response(response: Response) -> worker::Result<worker::Respons
 }
 
 #[event(fetch)]
-async fn fetch(req: HttpRequest, _env: Env, ctx: Context) -> worker::Result<worker::Response> {
+async fn fetch(req: HttpRequest, env: Env, ctx: Context) -> worker::Result<worker::Response> {
+    let environment = env
+        .var("MCP_ENVIRONMENT")
+        .ok()
+        .map(|value| value.to_string());
+    let policy = AccessPolicy::from_environment(environment.as_deref());
     #[cfg(target_os = "emscripten")]
     if req.uri().path() == "/mcp" {
-        return streaming::respond(req).await;
+        return streaming::respond(req, policy).await;
     }
     let _ = ctx;
-    buffered_response(router().oneshot(req).await?).await
+    let router = router(policy, &req);
+    buffered_response(router.oneshot(req).await?).await
 }

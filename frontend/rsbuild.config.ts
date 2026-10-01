@@ -1,5 +1,9 @@
 import { defineConfig } from "@rsbuild/core";
 import { pluginReact } from "@rsbuild/plugin-react";
+import site from "./src/content/site.json";
+
+const siteUrl = new URL("/", site.url);
+const ogpUrl = new URL("ogp.png", siteUrl).href;
 
 // https://rsbuild.dev/guide/basic/configure-rsbuild
 export default defineConfig({
@@ -19,7 +23,7 @@ export default defineConfig({
               tag: "link",
               attrs: {
                 rel: "canonical",
-                href: "https://haikunator-generator.goosysapp.net/",
+                href: siteUrl.href,
               },
               head: true,
             },
@@ -50,11 +54,11 @@ export default defineConfig({
       "og:type": { property: "og:type", content: "website" },
       "og:url": {
         property: "og:url",
-        content: "https://haikunator-generator.goosysapp.net/",
+        content: siteUrl.href,
       },
       "og:image": {
         property: "og:image",
-        content: "https://haikunator-generator.goosysapp.net/ogp.png",
+        content: ogpUrl,
       },
       "og:site_name": {
         property: "og:site_name",
@@ -67,9 +71,9 @@ export default defineConfig({
       "twitter:card": "summary_large_image",
       "twitter:description": "Heroku-like memorable random strings",
       "twitter:title": "Haikunator Generator",
-      "twitter:site": "@goosys",
-      "twitter:image": "https://haikunator-generator.goosysapp.net/ogp.png",
-      "twitter:creator": "@goosys",
+      ...(site.twitterSite ? { "twitter:site": site.twitterSite } : {}),
+      "twitter:image": ogpUrl,
+      ...(site.twitterCreator ? { "twitter:creator": site.twitterCreator } : {}),
       description: "Heroku-like memorable random strings",
     },
   },

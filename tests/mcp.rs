@@ -4,12 +4,55 @@ use axum::{
     response::Response,
 };
 use futures_util::StreamExt;
-use haikunator_worker::controllers::axum_router;
+use haikunator_worker::controllers::{
+    axum_router, axum_router_with_config,
+    mcp::{AccessConfig, AccessPolicy},
+};
 use serde_json::{json, Value};
 use std::time::Duration;
 use tower::ServiceExt;
 
+fn access_config() -> AccessConfig {
+    AccessConfig::new(
+        "https://generator.example.com",
+        "https://sample-worker.example-account.workers.dev",
+    )
+    .expect("example deployment configuration")
+}
+
 async fn request(method: Method, body: &str, origin: Option<&str>, host: &str) -> Response {
+    scoped_request(AccessPolicy::Development, None, method, body, origin, host).await
+}
+
+async fn scoped_request(
+    policy: AccessPolicy,
+    request_authority: Option<&str>,
+    method: Method,
+    body: &str,
+    origin: Option<&str>,
+    host: &str,
+) -> Response {
+    configured_request(
+        &access_config(),
+        policy,
+        request_authority,
+        method,
+        body,
+        origin,
+        host,
+    )
+    .await
+}
+
+async fn configured_request(
+    config: &AccessConfig,
+    policy: AccessPolicy,
+    request_authority: Option<&str>,
+    method: Method,
+    body: &str,
+    origin: Option<&str>,
+    host: &str,
+) -> Response {
     let mut builder = Request::builder()
         .method(method)
         .uri("/mcp")
@@ -20,10 +63,37 @@ async fn request(method: Method, body: &str, origin: Option<&str>, host: &str) -
     if let Some(origin) = origin {
         builder = builder.header(header::ORIGIN, origin);
     }
-    axum_router()
+    axum_router_with_config(policy, request_authority, config)
         .oneshot(builder.body(Body::from(body.to_owned())).expect("request"))
         .await
         .expect("response")
+}
+
+async fn public_authority_request(uri: &str, hosts: &[&str], origin: Option<&str>) -> Response {
+    let mut builder = Request::builder()
+        .method(Method::POST)
+        .uri(uri)
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::ACCEPT, "application/json, text/event-stream")
+        .header("mcp-protocol-version", "2025-11-25");
+    for host in hosts {
+        builder = builder.header(header::HOST, *host);
+    }
+    if let Some(origin) = origin {
+        builder = builder.header(header::ORIGIN, origin);
+    }
+    let request = builder
+        .body(Body::from(ping_body()))
+        .expect("authority request");
+    let authority = request
+        .uri()
+        .authority()
+        .map(axum::http::uri::Authority::as_str)
+        .or_else(|| request.headers().get(header::HOST)?.to_str().ok());
+    axum_router_with_config(AccessPolicy::Public, authority, &access_config())
+        .oneshot(request)
+        .await
+        .expect("authority response")
 }
 
 async fn rpc(method: &str, params: Value) -> (HeaderMap, Value) {
@@ -481,16 +551,456 @@ async fn transport_rejects_untrusted_origins_hosts_and_unsupported_methods() {
             .status(),
         StatusCode::FORBIDDEN
     );
-    assert_eq!(
-        request(
+}
+
+fn ping_body() -> String {
+    json!({"jsonrpc": "2.0", "id": 1, "method": "ping"}).to_string()
+}
+
+#[test]
+fn access_configuration_requires_https_origin_urls() {
+    for public_url in [
+        "https://generator.example.com",
+        "https://generator.example.com:443",
+    ] {
+        assert!(
+            AccessConfig::new(
+                public_url,
+                "https://sample-worker.example-account.workers.dev"
+            )
+            .is_ok(),
+            "valid public origin {public_url}"
+        );
+    }
+    for public_url in [
+        "http://generator.example.com",
+        "generator.example.com",
+        "https://user@generator.example.com",
+        "https://user:password@generator.example.com",
+        "https://generator.example.com/path",
+        "https://generator.example.com?query=value",
+        "https://generator.example.com#fragment",
+        "https://generator.example.com:80",
+        "https://generator.example.com:8443",
+        "https://generator.example.com:",
+        "https://",
+    ] {
+        assert!(
+            AccessConfig::new(
+                public_url,
+                "https://sample-worker.example-account.workers.dev"
+            )
+            .is_err(),
+            "invalid public origin {public_url}"
+        );
+    }
+}
+
+#[test]
+fn access_configuration_requires_a_workers_dev_base_origin() {
+    for workers_dev_url in [
+        "https://sample-worker.example-account.workers.dev",
+        "https://sample-worker.example-account.workers.dev:443",
+    ] {
+        assert!(
+            AccessConfig::new("https://generator.example.com", workers_dev_url).is_ok(),
+            "valid workers.dev origin {workers_dev_url}"
+        );
+    }
+    for workers_dev_url in [
+        "http://sample-worker.example-account.workers.dev",
+        "https://sample-worker.example-account.workers.dev:8787",
+        "https://user@sample-worker.example-account.workers.dev",
+        "https://sample-worker.example-account.workers.dev/path",
+        "https://sample-worker.example-account.workers.dev?query=value",
+        "https://sample-worker.example-account.workers.dev#fragment",
+        "https://sample-worker.workers.dev",
+        "https://branch.sample-worker.example-account.workers.dev",
+        "https://sample-worker.example-account.workers.dev.evil.example",
+        "https://sample_worker.example-account.workers.dev",
+        "https://-sample-worker.example-account.workers.dev",
+        "https://sample-worker-.example-account.workers.dev",
+        "https://sample-worker.example_account.workers.dev",
+        "https://sample-worker.example-account.example.com",
+    ] {
+        assert!(
+            AccessConfig::new("https://generator.example.com", workers_dev_url).is_err(),
+            "invalid workers.dev origin {workers_dev_url}"
+        );
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn preview_prefix_limit_follows_the_configured_worker_name_length() {
+    let body = ping_body();
+    for (worker_name, maximum_prefix_length) in [("sample-worker", 49), ("tiny", 58)] {
+        let config = AccessConfig::new(
+            "https://generator.example.com",
+            &format!("https://{worker_name}.example-account.workers.dev"),
+        )
+        .expect("worker configuration");
+        for (prefix_length, status) in [
+            (maximum_prefix_length, StatusCode::OK),
+            (maximum_prefix_length + 1, StatusCode::FORBIDDEN),
+        ] {
+            let authority = format!(
+                "{}-{worker_name}.example-account.workers.dev",
+                "a".repeat(prefix_length)
+            );
+            let origin = format!("https://{authority}");
+            assert_eq!(
+                configured_request(
+                    &config,
+                    AccessPolicy::Public,
+                    Some(&authority),
+                    Method::POST,
+                    &body,
+                    Some(&origin),
+                    &authority,
+                )
+                .await
+                .status(),
+                status,
+                "worker {worker_name} with prefix length {prefix_length}"
+            );
+        }
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn public_transport_allows_production_hosts_and_native_clients() {
+    let body = ping_body();
+    for host in [
+        "generator.example.com",
+        "sample-worker.example-account.workers.dev",
+    ] {
+        for origin in [None, Some(format!("https://{host}"))] {
+            assert_eq!(
+                scoped_request(
+                    AccessPolicy::Public,
+                    Some(host),
+                    Method::POST,
+                    &body,
+                    origin.as_deref(),
+                    host,
+                )
+                .await
+                .status(),
+                StatusCode::OK,
+                "production host {host}, origin {origin:?}"
+            );
+        }
+    }
+    let response = axum_router()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/mcp")
+                .header(header::HOST, "localhost:8787")
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ACCEPT, "application/json, text/event-stream")
+                .body(Body::from(body))
+                .expect("default policy request"),
+        )
+        .await
+        .expect("default policy response");
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn public_transport_rejects_development_hosts_and_origins() {
+    let body = ping_body();
+    let public_host = "generator.example.com";
+    for host in ["localhost:8787", "127.0.0.1:8787"] {
+        assert_eq!(
+            scoped_request(
+                AccessPolicy::Public,
+                Some(host),
+                Method::POST,
+                &body,
+                None,
+                host,
+            )
+            .await
+            .status(),
+            StatusCode::FORBIDDEN,
+            "development host {host}"
+        );
+    }
+    for origin in [
+        "http://localhost:8787",
+        "http://127.0.0.1:8787",
+        "http://localhost:5153",
+        "http://127.0.0.1:5153",
+        "https://untrusted.example",
+        "null",
+    ] {
+        assert_eq!(
+            scoped_request(
+                AccessPolicy::Public,
+                Some(public_host),
+                Method::POST,
+                &body,
+                Some(origin),
+                public_host,
+            )
+            .await
+            .status(),
+            StatusCode::FORBIDDEN,
+            "development or untrusted origin {origin}"
+        );
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn development_transport_stays_local() {
+    let body = ping_body();
+    for host in ["localhost:8787", "127.0.0.1:8787"] {
+        for origin in [
+            None,
+            Some("http://localhost:8787"),
+            Some("http://127.0.0.1:8787"),
+            Some("http://localhost:5153"),
+            Some("http://127.0.0.1:5153"),
+        ] {
+            assert_eq!(
+                request(Method::POST, &body, origin, host).await.status(),
+                StatusCode::OK,
+                "local host {host}, origin {origin:?}"
+            );
+        }
+    }
+    for host in [
+        "generator.example.com",
+        "sample-worker.example-account.workers.dev",
+        "feature-sample-worker.example-account.workers.dev",
+    ] {
+        assert_eq!(
+            scoped_request(
+                AccessPolicy::Development,
+                Some(host),
+                Method::POST,
+                &body,
+                None,
+                host,
+            )
+            .await
+            .status(),
+            StatusCode::FORBIDDEN,
+            "non-local development host {host}"
+        );
+    }
+    for origin in [
+        "https://generator.example.com",
+        "https://sample-worker.example-account.workers.dev",
+        "https://feature-sample-worker.example-account.workers.dev",
+    ] {
+        assert_eq!(
+            request(Method::POST, &body, Some(origin), "localhost:8787")
+                .await
+                .status(),
+            StatusCode::FORBIDDEN,
+            "non-local development origin {origin}"
+        );
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn public_transport_automatically_allows_the_current_worker_preview() {
+    let body = ping_body();
+    let maximum_alias = format!(
+        "{}-sample-worker.example-account.workers.dev",
+        "a".repeat(49)
+    );
+    for authority in [
+        "7ca1de02-sample-worker.example-account.workers.dev",
+        "feature-mcp-sample-worker.example-account.workers.dev",
+        "FEATURE-MCP-SAMPLE-WORKER.EXAMPLE-ACCOUNT.WORKERS.DEV",
+        "feature-mcp-sample-worker.example-account.workers.dev:443",
+        maximum_alias.as_str(),
+    ] {
+        let origin = format!("https://{authority}");
+        for origin in [None, Some(origin.as_str())] {
+            assert_eq!(
+                scoped_request(
+                    AccessPolicy::Public,
+                    Some(authority),
+                    Method::POST,
+                    &body,
+                    origin,
+                    authority,
+                )
+                .await
+                .status(),
+                StatusCode::OK,
+                "preview authority {authority}, origin {origin:?}"
+            );
+        }
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn preview_origins_are_scoped_to_the_requested_preview() {
+    let body = ping_body();
+    let preview = "feature-mcp-sample-worker.example-account.workers.dev";
+    for (authority, origin, status) in [
+        (preview, "https://generator.example.com", StatusCode::OK),
+        (
+            preview,
+            "https://sample-worker.example-account.workers.dev",
+            StatusCode::OK,
+        ),
+        (
+            preview,
+            "https://other-sample-worker.example-account.workers.dev",
+            StatusCode::FORBIDDEN,
+        ),
+        (
+            "generator.example.com",
+            "https://feature-mcp-sample-worker.example-account.workers.dev",
+            StatusCode::FORBIDDEN,
+        ),
+        (
+            preview,
+            "http://feature-mcp-sample-worker.example-account.workers.dev",
+            StatusCode::FORBIDDEN,
+        ),
+        (preview, "null", StatusCode::FORBIDDEN),
+    ] {
+        assert_eq!(
+            scoped_request(
+                AccessPolicy::Public,
+                Some(authority),
+                Method::POST,
+                &body,
+                Some(origin),
+                authority,
+            )
+            .await
+            .status(),
+            status,
+            "authority {authority}, origin {origin}"
+        );
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn public_transport_rejects_preview_lookalikes_and_invalid_authorities() {
+    let body = ping_body();
+    let overlong_alias = format!(
+        "{}-sample-worker.example-account.workers.dev",
+        "a".repeat(50)
+    );
+    for authority in [
+        "feature-sample-worker.other-account.workers.dev",
+        "feature-other-worker.example-account.workers.dev",
+        "feature-sample-worker.example-account.workers.dev.evil.example",
+        "feature.branch-sample-worker.example-account.workers.dev",
+        "-sample-worker.example-account.workers.dev",
+        "-feature-sample-worker.example-account.workers.dev",
+        "feature--sample-worker.example-account.workers.dev",
+        "feature_1-sample-worker.example-account.workers.dev",
+        "feature-sample-worker.example-account.workers.dev:80",
+        "feature-sample-worker.example-account.workers.dev:8787",
+        "user@feature-sample-worker.example-account.workers.dev",
+        overlong_alias.as_str(),
+    ] {
+        let response = scoped_request(
+            AccessPolicy::Public,
+            Some(authority),
             Method::POST,
             &body,
-            Some("https://haikunator-generator.goosysapp.net"),
-            "haikunator-generator.goosysapp.net"
+            None,
+            authority,
+        )
+        .await;
+        assert!(
+            matches!(
+                response.status(),
+                StatusCode::FORBIDDEN | StatusCode::BAD_REQUEST
+            ),
+            "invalid preview authority {authority}: {}",
+            response.status()
+        );
+    }
+    assert_eq!(
+        scoped_request(
+            AccessPolicy::Public,
+            None,
+            Method::POST,
+            &body,
+            None,
+            "feature-sample-worker.example-account.workers.dev",
         )
         .await
         .status(),
-        StatusCode::OK
+        StatusCode::FORBIDDEN,
+        "a Host header alone must not expand a router without a request authority"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn preview_host_must_match_the_absolute_request_authority() {
+    let preview = "feature-sample-worker.example-account.workers.dev";
+    let preview_uri = format!("https://{preview}/mcp");
+    assert_eq!(
+        public_authority_request("/mcp", &[preview], None)
+            .await
+            .status(),
+        StatusCode::OK,
+        "a relative request URI uses its Host as the preview authority"
+    );
+    for host in [
+        "localhost:8787",
+        "generator.example.com",
+        "sample-worker.example-account.workers.dev",
+        "other-sample-worker.example-account.workers.dev",
+        "feature-sample-worker.example-account.workers.dev:80",
+        "feature-sample-worker.example-account.workers.dev:8787",
+        "user@feature-sample-worker.example-account.workers.dev",
+        "",
+    ] {
+        assert_eq!(
+            public_authority_request(&preview_uri, &[host], None)
+                .await
+                .status(),
+            StatusCode::FORBIDDEN,
+            "preview URI authority must not permit a mismatched Host {host}"
+        );
+    }
+    for hosts in [
+        &[preview][..],
+        &["feature-sample-worker.example-account.workers.dev:443"][..],
+        &["FEATURE-SAMPLE-WORKER.EXAMPLE-ACCOUNT.WORKERS.DEV"][..],
+        &[][..],
+    ] {
+        assert_eq!(
+            public_authority_request(&preview_uri, hosts, Some(&format!("https://{preview}")))
+                .await
+                .status(),
+            StatusCode::OK,
+            "matching preview Host or absolute URI without Host"
+        );
+    }
+    for hosts in [
+        &[preview, preview][..],
+        &[preview, "other-sample-worker.example-account.workers.dev"][..],
+        &["other-sample-worker.example-account.workers.dev", preview][..],
+    ] {
+        assert_eq!(
+            public_authority_request(&preview_uri, hosts, None)
+                .await
+                .status(),
+            StatusCode::FORBIDDEN,
+            "preview requests must reject multiple Host headers: {hosts:?}"
+        );
+    }
+    assert_eq!(
+        public_authority_request("https://untrusted.example/mcp", &[preview], None)
+            .await
+            .status(),
+        StatusCode::FORBIDDEN,
+        "a preview Host cannot override an untrusted absolute URI authority"
     );
 }
 

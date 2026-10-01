@@ -46,6 +46,8 @@ No authentication is required. The `gen` tool accepts no arguments and returns o
 {"name":"cool-rice-4810"}
 ```
 
+Production accepts browser MCP requests from the configured HTTPS Origins. Workers previews also accept their own HTTPS Origin. Localhost is allowed only in the development configuration; native MCP clients may omit Origin.
+
 ### Example: continuous generation
 
 The website includes a live example below the MCP instructions. Select a count and **Start** to see strings arrive every 500 ms. **Stop** aborts the streaming request.
