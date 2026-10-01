@@ -21,7 +21,7 @@ curl https://haikunator-generator.goosysapp.net/api/gen
 Example response:
 
 ```json
-{"name":"falling-disk-1736"}
+{"name":"cool-rice-4810"}
 ```
 
 ### Plain text
@@ -30,7 +30,7 @@ Example response:
 curl https://haikunator-generator.goosysapp.net/api/gen.txt
 ```
 
-Example response: `broken-wildflower-1928`.
+Example response: `divine-limit-4413`.
 
 ## MCP
 
@@ -43,7 +43,7 @@ https://haikunator-generator.goosysapp.net/mcp
 No authentication is required. The `gen` tool accepts no arguments and returns one string as structured content, with equivalent JSON text content:
 
 ```json
-{"name":"falling-disk-1736"}
+{"name":"cool-rice-4810"}
 ```
 
 ### Example: continuous generation
@@ -64,7 +64,7 @@ The tool waits one interval before each string and returns a finite sequence. Su
 Example final result for a count of 2:
 
 ```json
-{"results":[{"name":"quiet-river-4821"},{"name":"silver-meadow-7036"}]}
+{"results":[{"name":"divine-limit-4413"},{"name":"wispy-resonance-4355"}]}
 ```
 
 Closing the streaming request stops generation. Aborting a JSON-only call is not guaranteed to stop server-side generation. Calls last at most 40 seconds. Generated strings are not guaranteed to be unique.
