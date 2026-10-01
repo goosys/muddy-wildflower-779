@@ -7,6 +7,10 @@ const base = new URL(
 const securityHeaders = JSON.parse(
   await readFile(new URL("../security-headers.json", import.meta.url), "utf8"),
 );
+const site = JSON.parse(
+  await readFile(new URL("../frontend/src/content/site.json", import.meta.url), "utf8"),
+);
+const siteUrl = new URL("/", site.url);
 const origin = "https://smoke.example";
 
 async function request(path, { status = 200, ...options } = {}) {
@@ -381,18 +385,20 @@ for (const heading of ["# Haikunator Generator", "## REST API", "## MCP", "## Te
   assert.ok(overview.includes(heading), heading);
 }
 assert.ok(overview.includes("gen_continuous"));
-assert.ok(overview.includes("https://docs.rs/haikunator/latest/haikunator/struct.Haikunator.html"));
+assert.ok(overview.includes(site.poweredBy));
 const sitemap = await request("/sitemap.xml");
 assert.match(sitemap.headers.get("content-type") ?? "", /^(application|text)\/xml/);
 const sitemapBody = await sitemap.text();
 assert.match(sitemapBody, /xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9"/);
 assert.deepEqual([...sitemapBody.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]), [
-  "https://haikunator-generator.goosysapp.net/",
-  "https://haikunator-generator.goosysapp.net/index.md",
+  siteUrl.href,
+  new URL("index.md", siteUrl).href,
 ]);
 const robots = await request("/robots.txt");
 assert.ok(robots.headers.get("content-type")?.startsWith("text/plain"));
-assert.match(await robots.text(), /Sitemap: https:\/\/haikunator-generator.goosysapp.net\/sitemap.xml/);
+assert.ok((await robots.text()).split(/\r?\n/).includes(
+  `Sitemap: ${new URL("sitemap.xml", siteUrl).href}`,
+));
 
 const favicon = await request("/favicon.ico");
 assert.deepEqual(

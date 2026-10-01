@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const site = JSON.parse(readFileSync(new URL("../frontend/src/content/site.json", import.meta.url), "utf8"));
+site.url = new URL(site.url).origin;
 const destination = new URL("../frontend/public/", import.meta.url);
 mkdirSync(destination, { recursive: true });
 const markdown = `# Haikunator Generator
@@ -50,6 +51,8 @@ No authentication is required. The \`gen\` tool accepts no arguments and returns
 \`\`\`json
 {"name":"cool-rice-4810"}
 \`\`\`
+
+Production accepts browser MCP requests from the configured HTTPS Origins. Workers previews also accept their own HTTPS Origin. Localhost is allowed only in the development configuration; native MCP clients may omit Origin.
 
 ### Example: continuous generation
 

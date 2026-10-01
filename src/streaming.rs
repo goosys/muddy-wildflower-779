@@ -6,7 +6,7 @@
 
 use axum::{body::Body, http::StatusCode, response::Response};
 use futures_util::StreamExt;
-use haikunator_worker::controllers::mcp::MAX_REQUEST_BYTES;
+use haikunator_worker::controllers::mcp::{AccessPolicy, MAX_REQUEST_BYTES};
 use tower::ServiceExt;
 use worker::{
     js_sys::{Array, Function, Promise, Uint8Array},
@@ -17,7 +17,7 @@ use worker::{
 };
 
 #[worker::send]
-pub async fn respond(req: HttpRequest) -> worker::Result<worker::Response> {
+pub async fn respond(req: HttpRequest, policy: AccessPolicy) -> worker::Result<worker::Response> {
     // JS promises cross the host-loop boundary; cross-runtime Tokio oneshots lose
     // wakes in the pinned hosted scheduler when another runtime is being driven.
     let (head, resolve_head, reject_head) = deferred();
@@ -35,7 +35,7 @@ pub async fn respond(req: HttpRequest) -> worker::Result<worker::Response> {
                         return Ok(());
                     },
                     prepared = async {
-                        prepare(route_buffered_request(req).await?).await
+                        prepare(route_buffered_request(req, policy).await?).await
                     } => prepared?,
                 };
                 // Return headers before writing: writes wait for a client reader.
@@ -73,7 +73,10 @@ fn deferred() -> (Promise, Function, Function) {
     (promise, resolve, reject)
 }
 
-async fn route_buffered_request(req: HttpRequest) -> worker::Result<Response> {
+async fn route_buffered_request(
+    req: HttpRequest,
+    policy: AccessPolicy,
+) -> worker::Result<Response> {
     let (parts, body) = req.into_parts();
     let mut incoming = Body::new(body).into_data_stream();
     let mut bytes = Vec::new();
@@ -90,6 +93,7 @@ async fn route_buffered_request(req: HttpRequest) -> worker::Result<Response> {
             bytes.clear();
         }
     }
+    let request = axum::http::Request::from_parts(parts, Body::from(bytes));
     let router = if oversized {
         super::decorate_router(axum::Router::new().fallback(|| async {
             (
@@ -98,9 +102,8 @@ async fn route_buffered_request(req: HttpRequest) -> worker::Result<Response> {
             )
         }))
     } else {
-        super::router()
+        super::router(policy, &request)
     };
-    let request = axum::http::Request::from_parts(parts, Body::from(bytes));
     Ok(match router.oneshot(request).await {
         Ok(response) => response,
         Err(never) => match never {},

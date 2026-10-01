@@ -29,6 +29,11 @@ The REST API and MCP share one Worker. See [MCP reference](mcp.md) for tool beha
 
 `security-headers.json` shares the development CSP and GitHub security-header preset between API and static responses.
 
+`frontend/src/content/site.json` shares the public URLs between the frontend,
+generated site documents, MCP access policy, and HTTP smoke test. Rust embeds
+the settings at compile time. See [service settings](development.md#service-settings)
+for deployment configuration.
+
 ## Dependency updates
 
 The Workers SDK and `worker-build` use the same revision:

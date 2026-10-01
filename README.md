@@ -33,7 +33,7 @@ Connect a Streamable HTTP MCP client to
 - `gen_continuous`: Generate multiple strings with `count` (1–20, default 5)
   and `interval_ms` (100–2000, default 500).
 
-See [MCP usage and behavior](docs/mcp.md) for examples, streaming, and cancellation.
+See [MCP usage and behavior](docs/mcp.md) for examples, access policy, streaming, and cancellation.
 
 ## Documentation
 

@@ -1,5 +1,8 @@
 {
   "url": "https://haikunator-generator.goosysapp.net",
+  "workersDevUrl": "https://haikunator-generator.goosys.workers.dev",
+  "twitterSite": "@goosys",
+  "twitterCreator": "@goosys",
   "github": "https://github.com/goosys/muddy-wildflower-779",
   "poweredBy": "https://docs.rs/haikunator/latest/haikunator/struct.Haikunator.html",
   "tagline": "Generates Heroku-like memorable random strings.",

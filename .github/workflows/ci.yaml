@@ -61,7 +61,7 @@ jobs:
       - run: pnpm build
       - name: Run local HTTP smoke tests
         run: |
-          pnpm exec wrangler dev --ip 127.0.0.1 --port 8787 > /tmp/workers-dev.log 2>&1 &
+          pnpm exec wrangler dev --env development --ip 127.0.0.1 --port 8787 > /tmp/workers-dev.log 2>&1 &
           server_pid=$!
           cleanup() {
             status=$?

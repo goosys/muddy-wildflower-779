@@ -9,8 +9,27 @@ Haikunator Generator provides Heroku-like memorable random strings through Strea
 | Public endpoint | `https://haikunator-generator.goosysapp.net/mcp` |
 | Local endpoint | `http://localhost:8787/mcp` (`pnpm dev`) |
 | Authentication | None |
-| Browser Origin | Configured public URLs or local ports 8787/5153 |
-| Native clients | Requests without Origin are accepted |
+| Browser Origin | Public HTTPS URLs; local HTTP URLs only with `pnpm dev` |
+| Native clients | Origin is optional; Host validation still applies |
+
+## Access policy
+
+Production accepts the Hosts from `url` and `workersDevUrl` in
+`frontend/src/content/site.json`. Browser Origins must use these domains over
+HTTPS on port 443.
+
+Workers preview Hosts matching `<prefix>-<worker>.<account>.workers.dev` are
+recognized automatically using the Worker and account from `workersDevUrl`.
+The prefix uses ASCII letters, digits, or hyphens, starting and ending with a
+letter or digit. Its length must keep `<prefix>-<worker>` within the DNS label
+limit of 63 bytes. A preview accepts its own HTTPS Origin on port 443 and the
+configured production Origins. Another preview's Origin is rejected, and
+production does not accept preview Origins.
+
+Production and previews reject `localhost` and `127.0.0.1` Hosts and Origins.
+With `pnpm dev`, the development policy accepts these Hosts on port 8787 and
+their HTTP browser Origins on ports 8787 and 5153. Native MCP clients can omit
+Origin in either policy, but must still use an allowed Host.
 
 ## Tools
 
