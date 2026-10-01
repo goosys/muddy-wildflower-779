@@ -19,7 +19,7 @@ export function ApiSection() {
       />
       <CodeBlock
         label="Example response"
-        code={'{"name":"falling-disk-1736"}'}
+        code={'{"name":"cool-rice-4810"}'}
         copy={false}
       />
       <CodeBlock
@@ -29,7 +29,7 @@ export function ApiSection() {
       />
       <CodeBlock
         label="Example response"
-        code="broken-wildflower-1928"
+        code="divine-limit-4413"
         copy={false}
       />
       <CodeBlock label="Try it with curl" code={`curl ${site.url}/api/gen`} />

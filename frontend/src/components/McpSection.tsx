@@ -20,7 +20,7 @@ export function McpSection() {
       </p>
       <CodeBlock
         label="Example response"
-        code={'{"name":"falling-disk-1736"}'}
+        code={'{"name":"cool-rice-4810"}'}
         copy={false}
       />
       <p className="tool-tag">Tool: gen_continuous</p>
@@ -36,7 +36,7 @@ export function McpSection() {
       />
       <CodeBlock
         label="Final result (count: 1 example)"
-        code={'{"results":[{"name":"quiet-river-4821"}]}'}
+        code={'{"results":[{"name":"divine-limit-4413"}]}'}
         copy={false}
       />
       <ContinuousExample />
